@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AQI Analysis Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #eee;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        header {
+            text-align: center;
+            padding: 40px 20px;
+            margin-bottom: 40px;
+        }
+        h1 {
+            font-size: 2.5rem;
+            color: #4fc3f7;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            font-size: 1.1rem;
+            color: #aaa;
+        }
+        .section {
+            margin-bottom: 50px;
+        }
+        .section-title {
+            font-size: 1.8rem;
+            color: #81d4fa;
+            margin-bottom: 25px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #4fc3f7;
+        }
+        .graphs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(600px, 1fr));
+            gap: 30px;
+        }
+        .graph-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .graph-card h3 {
+            color: #4fc3f7;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+        .graph-card img {
+            width: 100%;
+            height: auto;
+            border-radius: 10px;
+            background: white;
+        }
+        .full-width {
+            grid-column: 1 / -1;
+        }
+        footer {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+            margin-top: 50px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🌍 Air Quality Index Analysis Dashboard</h1>
+            <p class="subtitle">EPA AQI Data Analysis (2021-2024) - Identifying Air Quality Patterns Across the United States</p>
+        </header>
+
+        <section class="section">
+            <h2 class="section-title">📊 State-Level Analysis</h2>
+            <div class="graphs-grid">
+                <div class="graph-card">
+                    <h3>Top 10 States by Average Unhealthy Days</h3>
+                    <img src="data:image/png;base64,{{ graphs.graph1 }}" alt="Top States">
+                </div>
+                <div class="graph-card">
+                    <h3>Unhealthy Days Trend for Top 5 States</h3>
+                    <img src="data:image/png;base64,{{ graphs.graph2 }}" alt="State Trends">
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title">🏘️ County-Level Analysis</h2>
+            <div class="graphs-grid">
+                <div class="graph-card">
+                    <h3>Top 10 Counties by Average Unhealthy Days</h3>
+                    <img src="data:image/png;base64,{{ graphs.graph3 }}" alt="Top Counties">
+                </div>
+                <div class="graph-card">
+                    <h3>Unhealthy Days Trend for Top 5 Counties</h3>
+                    <img src="data:image/png;base64,{{ graphs.graph4 }}" alt="County Trends">
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title">🌫️ Pollutant Analysis</h2>
+            <div class="graphs-grid">
+                <div class="graph-card full-width">
+                    <h3>Pollutant Days Comparison by State</h3>
+                    <img src="data:image/png;base64,{{ graphs.graph5 }}" alt="Pollutant Comparison">
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title">🗺️ Regional Comparison</h2>
+            <div class="graphs-grid">
+                <div class="graph-card">
+                    <h3>Distribution of Unhealthy Days by Region</h3>
+                    <img src="data:image/png;base64,{{ graphs.graph6 }}" alt="Regional Boxplot">
+                </div>
+                <div class="graph-card">
+                    <h3>Max AQI Distribution by Region</h3>
+                    <img src="data:image/png;base64,{{ graphs.graph7 }}" alt="Max AQI Strip">
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title">📈 Median AQI Analysis</h2>
+            <div class="graphs-grid">
+                <div class="graph-card full-width">
+                    <h3>Top 10 States by Median AQI</h3>
+                    <img src="data:image/png;base64,{{ graphs.graph8 }}" alt="Median AQI">
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title">⚠️ Chronic vs Acute Pollution</h2>
+            <div class="graphs-grid">
+                <div class="graph-card">
+                    <h3>Top 10 Counties - Chronic Pollution (Days with AQI)</h3>
+                    <img src="data:image/png;base64,{{ graphs.graph9 }}" alt="Chronic Pollution">
+                </div>
+                <div class="graph-card">
+                    <h3>Top 10 Counties - Acute Pollution (Max AQI)</h3>
+                    <img src="data:image/png;base64,{{ graphs.graph10 }}" alt="Acute Pollution">
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title">🎯 Double Jeopardy Analysis</h2>
+            <div class="graphs-grid">
+                <div class="graph-card">
+                    <h3>Double Jeopardy: Chronic vs Acute Pollution</h3>
+                    <img src="data:image/png;base64,{{ graphs.graph11 }}" alt="Double Jeopardy Scatter">
+                </div>
+                <div class="graph-card">
+                    <h3>County Risk Categories</h3>
+                    <img src="data:image/png;base64,{{ graphs.graph12 }}" alt="Risk Map">
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title">🚨 Targeted Intervention</h2>
+            <div class="graphs-grid">
+                <div class="graph-card full-width">
+                    <h3>Top 15 Counties by Pollution Severity Score</h3>
+                    <img src="data:image/png;base64,{{ graphs.graph13 }}" alt="Severity Score">
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <p>Data Source: EPA Air Quality Index Annual Summary | Analysis: Datathon 2026</p>
+        </footer>
+    </div>
+</body>
+</html>

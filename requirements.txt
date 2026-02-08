@@ -1,0 +1,6 @@
+tabpy
+tabpy-client
+tableauhyperapi
+tableauserverclient
+pandas
+lxml
