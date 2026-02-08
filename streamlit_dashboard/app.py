@@ -285,9 +285,9 @@ def load_data():
     return df
 
 @st.cache_data
-def compute_county_stats(df):
+def compute_county_stats(_df):
     """Compute aggregated county statistics - EXACT as in original notebook."""
-    county_stats = df.groupby(['State', 'County']).agg({
+    county_stats = _df.groupby(['State', 'County']).agg({
         'Median AQI': 'mean',
         'Max AQI': 'mean'
     }).reset_index()
@@ -295,12 +295,12 @@ def compute_county_stats(df):
     return county_stats
 
 @st.cache_data
-def compute_double_jeopardy(county_stats, percentile=90):
+def compute_double_jeopardy(_county_stats, percentile=90):
     """Identify Double Jeopardy counties - EXACT logic from notebook."""
-    median_threshold = county_stats['mean_median_aqi'].quantile(percentile / 100)
-    max_threshold = county_stats['mean_max_aqi'].quantile(percentile / 100)
+    median_threshold = _county_stats['mean_median_aqi'].quantile(percentile / 100)
+    max_threshold = _county_stats['mean_max_aqi'].quantile(percentile / 100)
     
-    stats = county_stats.copy()
+    stats = _county_stats.copy()
     stats['Risk_Category'] = 'Low Risk'
     stats.loc[(stats['mean_median_aqi'] >= median_threshold), 'Risk_Category'] = 'High Chronic'
     stats.loc[(stats['mean_max_aqi'] >= max_threshold), 'Risk_Category'] = 'High Acute'

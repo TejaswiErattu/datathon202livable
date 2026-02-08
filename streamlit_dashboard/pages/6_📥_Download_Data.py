@@ -46,8 +46,8 @@ def load_data():
     return pd.concat(df_list, ignore_index=True) if df_list else pd.DataFrame()
 
 @st.cache_data
-def compute_county_stats(df):
-    county_stats = df.groupby(['State', 'County']).agg({
+def compute_county_stats(_df):
+    county_stats = _df.groupby(['State', 'County']).agg({
         'Median AQI': 'mean',
         'Max AQI': 'mean'
     }).reset_index()
@@ -55,15 +55,15 @@ def compute_county_stats(df):
     return county_stats
 
 @st.cache_data
-def compute_all_exports(df, county_stats, percentile=90):
+def compute_all_exports(_df, _county_stats, percentile=90):
     """Compute all exportable datasets."""
     
     # Thresholds
-    median_threshold = county_stats['mean_median_aqi'].quantile(percentile / 100)
-    max_threshold = county_stats['mean_max_aqi'].quantile(percentile / 100)
+    median_threshold = _county_stats['mean_median_aqi'].quantile(percentile / 100)
+    max_threshold = _county_stats['mean_max_aqi'].quantile(percentile / 100)
     
     # Risk categories
-    stats = county_stats.copy()
+    stats = _county_stats.copy()
     stats['Risk_Category'] = 'Low Risk'
     stats.loc[(stats['mean_median_aqi'] >= median_threshold), 'Risk_Category'] = 'High Chronic'
     stats.loc[(stats['mean_max_aqi'] >= max_threshold), 'Risk_Category'] = 'High Acute'
@@ -89,13 +89,47 @@ if df.empty:
     st.error("No data found.")
     st.stop()
 
-county_stats = compute_county_stats(df)
-full_stats, median_thresh, max_thresh = compute_all_exports(df, county_stats)
+# =============================================================================
+# FILTERS
+# =============================================================================
+section_label(st, "Data Export Filters")
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    year_range = st.slider(
+        "Year Range to Include", 
+        min_value=2021, max_value=2024, value=(2021, 2024), step=1,
+        help="Select which years of data to include in exports",
+        key="download_year_range"
+    )
+
+with col2:
+    percentile = st.slider(
+        "Threshold Percentile", 
+        min_value=80, max_value=99, value=90, step=1,
+        help="Percentile for defining Double Jeopardy status"
+    )
+
+with col3:
+    export_format = st.selectbox(
+        "Export Format",
+        ["CSV", "Excel", "JSON"],
+        help="Choose the format for data downloads"
+    )
+
+# Apply year filter
+year_min, year_max = year_range
+df_filtered = df[(df['Year'] >= year_min) & (df['Year'] <= year_max)].copy()
+
+county_stats = compute_county_stats(df_filtered)
+full_stats, median_thresh, max_thresh = compute_all_exports(df_filtered, county_stats, percentile)
 
 # =============================================================================
 # PAGE CONTENT
 # =============================================================================
-page_header(st, "Download Data & Methodology", "Export Processed Data and Learn About Our Approach", "📥")
+years_text = f"{year_min}-{year_max}" if year_min != year_max else str(year_min)
+page_header(st, "Download Data & Methodology", f"Export Processed Data and Learn About Our Approach ({years_text})", "📥")
 
 section_divider(st)
 

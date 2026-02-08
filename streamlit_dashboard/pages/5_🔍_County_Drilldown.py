@@ -49,8 +49,8 @@ def load_data():
     return pd.concat(df_list, ignore_index=True) if df_list else pd.DataFrame()
 
 @st.cache_data
-def compute_county_stats(df):
-    county_stats = df.groupby(['State', 'County']).agg({
+def compute_county_stats(_df):
+    county_stats = _df.groupby(['State', 'County']).agg({
         'Median AQI': 'mean',
         'Max AQI': 'mean'
     }).reset_index()
@@ -71,7 +71,7 @@ page_header(st, "County Drilldown", "Explore Individual County Profiles", "🔍"
 
 st.markdown("""
 <div class="callout-box-teal">
-<strong>Deep Dive:</strong> Select a specific county to view its air quality trends over 2021-2024, 
+<strong>Deep Dive:</strong> Select a specific county to view its air quality trends, 
 understand how it compares to thresholds, and download its data for further analysis.
 </div>
 """, unsafe_allow_html=True)
@@ -81,9 +81,9 @@ section_divider(st)
 # =============================================================================
 # COUNTY SELECTION
 # =============================================================================
-section_label(st, "Select County")
+section_label(st, "Select County & Filters")
 
-col1, col2, col3 = st.columns([1, 1, 1])
+col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
 
 with col1:
     states = sorted(df['State'].unique().tolist())
@@ -94,16 +94,41 @@ with col2:
     selected_county = st.selectbox("Select County", counties_in_state, key="drilldown_county")
 
 with col3:
+    year_range = st.slider(
+        "Year Range", 
+        min_value=2021, max_value=2024, value=(2021, 2024), step=1,
+        help="Select which years to display and analyze",
+        key="drilldown_year_range"
+    )
+
+with col4:
     percentile = st.slider(
         "Threshold Percentile", 
         min_value=80, max_value=99, value=90, step=1,
         help="Used to determine Double Jeopardy status"
     )
 
+# Apply year filter
+year_min, year_max = year_range
+df_filtered = df[(df['Year'] >= year_min) & (df['Year'] <= year_max)].copy()
+
+# Recalculate county stats with filtered years for comparison
+county_stats_filtered = df_filtered.groupby(['State', 'County']).agg({
+    'Median AQI': 'mean',
+    'Max AQI': 'mean'
+}).reset_index()
+county_stats_filtered.columns = ['State', 'County', 'mean_median_aqi', 'mean_max_aqi']
+
 # =============================================================================
 # COUNTY DATA
 # =============================================================================
-county_data = df[(df['State'] == selected_state) & (df['County'] == selected_county)].copy()
+county_data = df_filtered[(df_filtered['State'] == selected_state) & (df_filtered['County'] == selected_county)].copy()
+years_text = f"{year_min}-{year_max}" if year_min != year_max else str(year_min)
+
+if county_data.empty:
+    st.warning(f"No data found for {selected_county}, {selected_state} in the selected year range ({years_text}).")
+    st.stop()
+
 county_yearly = county_data.groupby('Year').agg({
     'Median AQI': 'mean',
     'Max AQI': 'mean',
@@ -113,12 +138,12 @@ county_yearly = county_data.groupby('Year').agg({
 }).reset_index()
 
 # Get county aggregated stats
-county_agg = county_stats[(county_stats['State'] == selected_state) & 
-                          (county_stats['County'] == selected_county)].iloc[0]
+county_agg = county_stats_filtered[(county_stats_filtered['State'] == selected_state) & 
+                                   (county_stats_filtered['County'] == selected_county)].iloc[0]
 
 # Calculate thresholds for Double Jeopardy check
-median_threshold = county_stats['mean_median_aqi'].quantile(percentile / 100)
-max_threshold = county_stats['mean_max_aqi'].quantile(percentile / 100)
+median_threshold = county_stats_filtered['mean_median_aqi'].quantile(percentile / 100)
+max_threshold = county_stats_filtered['mean_max_aqi'].quantile(percentile / 100)
 
 is_high_chronic = county_agg['mean_median_aqi'] >= median_threshold
 is_high_acute = county_agg['mean_max_aqi'] >= max_threshold
@@ -151,19 +176,19 @@ with col2:
     )
 
 with col3:
-    chronic_rank = (county_stats['mean_median_aqi'] >= county_agg['mean_median_aqi']).sum()
+    chronic_rank = (county_stats_filtered['mean_median_aqi'] >= county_agg['mean_median_aqi']).sum()
     st.metric(
         "Chronic Rank",
         f"#{chronic_rank}",
-        delta=f"of {len(county_stats)} counties"
+        delta=f"of {len(county_stats_filtered)} counties"
     )
 
 with col4:
-    acute_rank = (county_stats['mean_max_aqi'] >= county_agg['mean_max_aqi']).sum()
+    acute_rank = (county_stats_filtered['mean_max_aqi'] >= county_agg['mean_max_aqi']).sum()
     st.metric(
         "Acute Rank",
         f"#{acute_rank}",
-        delta=f"of {len(county_stats)} counties"
+        delta=f"of {len(county_stats_filtered)} counties"
     )
 
 # Double Jeopardy Status

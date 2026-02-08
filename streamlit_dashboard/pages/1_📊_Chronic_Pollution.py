@@ -48,9 +48,9 @@ def load_data():
     return pd.concat(df_list, ignore_index=True) if df_list else pd.DataFrame()
 
 @st.cache_data
-def compute_county_stats(df):
+def compute_county_stats(_df):
     """Compute aggregated county statistics - EXACT as in original notebook."""
-    county_stats = df.groupby(['State', 'County']).agg({
+    county_stats = _df.groupby(['State', 'County']).agg({
         'Median AQI': 'mean',
         'Max AQI': 'mean'
     }).reset_index()
@@ -65,39 +65,59 @@ if df.empty:
 county_stats = compute_county_stats(df)
 
 # =============================================================================
+# FILTERS (moved up to calculate year range first)
+# =============================================================================
+section_label(st, "Filters")
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    year_range = st.slider(
+        "Year Range to Include", 
+        min_value=2021, max_value=2024, value=(2021, 2024), step=1,
+        help="Select which years of data to include in the analysis",
+        key="chronic_year_range"
+    )
+
+with col2:
+    states = ['All States'] + sorted(county_stats['State'].unique().tolist())
+    selected_state = st.selectbox("Select State", states, key="chronic_state")
+
+with col3:
+    top_n = st.slider("Show Top N Counties", min_value=10, max_value=50, value=15, step=5, key="chronic_topn")
+
+# Apply year filter and recalculate county stats
+year_min, year_max = year_range
+df_filtered = df[(df['Year'] >= year_min) & (df['Year'] <= year_max)].copy()
+
+# Recalculate county stats with filtered years
+county_stats_filtered = df_filtered.groupby(['State', 'County']).agg({
+    'Median AQI': 'mean',
+    'Max AQI': 'mean'
+}).reset_index()
+county_stats_filtered.columns = ['State', 'County', 'mean_median_aqi', 'mean_max_aqi']
+
+# Filter data by state
+if selected_state != 'All States':
+    filtered_stats = county_stats_filtered[county_stats_filtered['State'] == selected_state].copy()
+else:
+    filtered_stats = county_stats_filtered.copy()
+
+# =============================================================================
 # PAGE CONTENT
 # =============================================================================
-page_header(st, "Chronic Pollution Analysis", "Top Counties by Mean Median AQI (2021-2024)", "📊")
+years_text = f"{year_min}-{year_max}" if year_min != year_max else str(year_min)
+page_header(st, "Chronic Pollution Analysis", f"Top Counties by Mean Median AQI ({years_text})", "📊")
 
 st.markdown("""
 <div class="callout-box">
 <strong>What is Chronic Pollution?</strong> The Median AQI represents the <em>typical daily air quality</em> 
-a resident experiences. A high average Median AQI over 4 years indicates persistent, day-in-day-out 
+a resident experiences. A high average Median AQI over multiple years indicates persistent, day-in-day-out 
 pollution exposure—the "daily grind" that affects long-term respiratory and cardiovascular health.
 </div>
 """, unsafe_allow_html=True)
 
 section_divider(st)
-
-# =============================================================================
-# FILTERS
-# =============================================================================
-section_label(st, "Filters")
-
-col1, col2 = st.columns(2)
-
-with col1:
-    states = ['All States'] + sorted(county_stats['State'].unique().tolist())
-    selected_state = st.selectbox("Select State", states, key="chronic_state")
-
-with col2:
-    top_n = st.slider("Show Top N Counties", min_value=10, max_value=50, value=15, step=5, key="chronic_topn")
-
-# Filter data
-if selected_state != 'All States':
-    filtered_stats = county_stats[county_stats['State'] == selected_state].copy()
-else:
-    filtered_stats = county_stats.copy()
 
 # Get top N by chronic pollution (Mean Median AQI) - EXACT as notebook
 chronic_top = filtered_stats.sort_values('mean_median_aqi', ascending=False).head(top_n)

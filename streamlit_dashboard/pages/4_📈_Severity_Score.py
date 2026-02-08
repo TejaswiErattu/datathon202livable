@@ -48,8 +48,8 @@ def load_data():
     return pd.concat(df_list, ignore_index=True) if df_list else pd.DataFrame()
 
 @st.cache_data
-def compute_county_stats(df):
-    county_stats = df.groupby(['State', 'County']).agg({
+def compute_county_stats(_df):
+    county_stats = _df.groupby(['State', 'County']).agg({
         'Median AQI': 'mean',
         'Max AQI': 'mean'
     }).reset_index()
@@ -64,9 +64,43 @@ if df.empty:
 county_stats = compute_county_stats(df)
 
 # =============================================================================
+# FILTERS (added at the top)
+# =============================================================================
+section_label(st, "Filters")
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    year_range = st.slider(
+        "Year Range to Include", 
+        min_value=2021, max_value=2024, value=(2021, 2024), step=1,
+        help="Select which years of data to include in the analysis",
+        key="severity_year_range"
+    )
+
+with col2:
+    states = ['All States'] + sorted(county_stats['State'].unique().tolist())
+    selected_state = st.selectbox("Filter by State", states, key="severity_state")
+
+with col3:
+    top_n = st.slider("Show Top N Counties", min_value=10, max_value=50, value=20, step=5, key="severity_topn")
+
+# Apply year filter and recalculate county stats
+year_min, year_max = year_range
+df_filtered = df[(df['Year'] >= year_min) & (df['Year'] <= year_max)].copy()
+
+# Recalculate county stats with filtered years
+county_stats_filtered = df_filtered.groupby(['State', 'County']).agg({
+    'Median AQI': 'mean',
+    'Max AQI': 'mean'
+}).reset_index()
+county_stats_filtered.columns = ['State', 'County', 'mean_median_aqi', 'mean_max_aqi']
+
+# =============================================================================
 # PAGE CONTENT
 # =============================================================================
-page_header(st, "Severity Score Analysis", "Combined Pollution Burden Metric", "📈")
+years_text = f"{year_min}-{year_max}" if year_min != year_max else str(year_min)
+page_header(st, "Severity Score Analysis", f"Combined Pollution Burden Metric ({years_text})", "📈")
 
 st.markdown("""
 <div class="callout-box-purple">
@@ -111,24 +145,14 @@ Severity = (Norm_Median + Norm_Max) / 2</pre>
 section_divider(st)
 
 # =============================================================================
-# FILTERS
+# DATA PROCESSING
 # =============================================================================
-section_label(st, "Filters")
 
-col1, col2 = st.columns(2)
-
-with col1:
-    states = ['All States'] + sorted(county_stats['State'].unique().tolist())
-    selected_state = st.selectbox("Select State", states, key="severity_state")
-
-with col2:
-    top_n = st.slider("Show Top N Counties", min_value=10, max_value=50, value=15, step=5, key="severity_topn")
-
-# Filter data
+# Filter data by state
 if selected_state != 'All States':
-    filtered_stats = county_stats[county_stats['State'] == selected_state].copy()
+    filtered_stats = county_stats_filtered[county_stats_filtered['State'] == selected_state].copy()
 else:
-    filtered_stats = county_stats.copy()
+    filtered_stats = county_stats_filtered.copy()
 
 # Compute normalized scores and severity - using filtered data for normalization
 stats_with_severity = filtered_stats.copy()

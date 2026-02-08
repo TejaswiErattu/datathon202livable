@@ -48,9 +48,9 @@ def load_data():
     return pd.concat(df_list, ignore_index=True) if df_list else pd.DataFrame()
 
 @st.cache_data
-def compute_county_stats(df):
+def compute_county_stats(_df):
     """Compute aggregated county statistics - EXACT as in original notebook."""
-    county_stats = df.groupby(['State', 'County']).agg({
+    county_stats = _df.groupby(['State', 'County']).agg({
         'Median AQI': 'mean',
         'Max AQI': 'mean'
     }).reset_index()
@@ -65,46 +65,66 @@ if df.empty:
 county_stats = compute_county_stats(df)
 
 # =============================================================================
-# PAGE CONTENT
-# =============================================================================
-page_header(st, "Extreme Pollution Spikes", "Top Counties by Mean Max AQI (2021-2024)", "⚡")
-
-st.markdown("""
-<div class="callout-box-orange">
-<strong>What are Extreme Spikes?</strong> The Max AQI represents the <em>worst single day</em> of air quality 
-each year. A high average Max AQI over 4 years indicates a county prone to dangerous pollution episodes—
-from wildfires, industrial accidents, or severe inversions—that pose immediate health emergencies.
-</div>
-""", unsafe_allow_html=True)
-
-section_divider(st)
-
-# =============================================================================
-# FILTERS
+# FILTERS (moved up to calculate year range first)
 # =============================================================================
 section_label(st, "Filters")
 
-col1, col2, col3 = st.columns(3)
+col1, col2, col3, col4 = st.columns(4)
 
 with col1:
+    year_range = st.slider(
+        "Year Range to Include", 
+        min_value=2021, max_value=2024, value=(2021, 2024), step=1,
+        help="Select which years of data to include in the analysis",
+        key="acute_year_range"
+    )
+
+with col2:
     states = ['All States'] + sorted(county_stats['State'].unique().tolist())
     selected_state = st.selectbox("Select State", states, key="acute_state")
 
-with col2:
+with col3:
     top_n = st.slider("Show Top N Counties", min_value=10, max_value=50, value=15, step=5, key="acute_topn")
 
-with col3:
+with col4:
     outlier_handling = st.selectbox(
         "Outlier Handling",
         ["None", "Cap at 500", "Winsorize Top 1%"],
         help="Extreme Max AQI values (often from wildfires) can skew visualizations"
     )
 
-# Filter data
+# Apply year filter and recalculate county stats
+year_min, year_max = year_range
+df_filtered = df[(df['Year'] >= year_min) & (df['Year'] <= year_max)].copy()
+
+# Recalculate county stats with filtered years
+county_stats_filtered = df_filtered.groupby(['State', 'County']).agg({
+    'Median AQI': 'mean',
+    'Max AQI': 'mean'
+}).reset_index()
+county_stats_filtered.columns = ['State', 'County', 'mean_median_aqi', 'mean_max_aqi']
+
+# =============================================================================
+# PAGE CONTENT
+# =============================================================================
+years_text = f"{year_min}-{year_max}" if year_min != year_max else str(year_min)
+page_header(st, "Extreme Pollution Spikes", f"Top Counties by Mean Max AQI ({years_text})", "⚡")
+
+st.markdown("""
+<div class="callout-box-orange">
+<strong>What are Extreme Spikes?</strong> The Max AQI represents the <em>worst single day</em> of air quality 
+each year. A high average Max AQI over multiple years indicates a county prone to dangerous pollution episodes—
+from wildfires, industrial accidents, or severe inversions—that pose immediate health emergencies.
+</div>
+""", unsafe_allow_html=True)
+
+section_divider(st)
+
+# Filter data by state
 if selected_state != 'All States':
-    filtered_stats = county_stats[county_stats['State'] == selected_state].copy()
+    filtered_stats = county_stats_filtered[county_stats_filtered['State'] == selected_state].copy()
 else:
-    filtered_stats = county_stats.copy()
+    filtered_stats = county_stats_filtered.copy()
 
 # Apply outlier handling
 display_stats = filtered_stats.copy()
