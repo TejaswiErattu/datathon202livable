@@ -34,6 +34,7 @@ def load_data():
         os.path.join(data_dir, "annual_aqi_by_county_2022.csv"),
         os.path.join(data_dir, "annual_aqi_by_county_2023.csv"),
         os.path.join(data_dir, "annual_aqi_by_county_2024.csv"),
+        os.path.join(data_dir, "annual_aqi_by_county_2025.csv"),
     ]
     
     df_list = []
@@ -73,7 +74,7 @@ col1, col2, col3 = st.columns(3)
 with col1:
     year_range = st.slider(
         "Year Range to Include", 
-        min_value=2021, max_value=2024, value=(2021, 2024), step=1,
+        min_value=2021, max_value=2025, value=(2021, 2025), step=1,
         help="Select which years of data to include in the analysis",
         key="severity_year_range"
     )

@@ -35,6 +35,7 @@ def load_data():
         os.path.join(data_dir, "annual_aqi_by_county_2022.csv"),
         os.path.join(data_dir, "annual_aqi_by_county_2023.csv"),
         os.path.join(data_dir, "annual_aqi_by_county_2024.csv"),
+        os.path.join(data_dir, "annual_aqi_by_county_2025.csv"),
     ]
     
     df_list = []
@@ -96,7 +97,7 @@ with col2:
 with col3:
     year_range = st.slider(
         "Year Range", 
-        min_value=2021, max_value=2024, value=(2021, 2024), step=1,
+        min_value=2021, max_value=2025, value=(2021, 2025), step=1,
         help="Select which years to display and analyze",
         key="drilldown_year_range"
     )
