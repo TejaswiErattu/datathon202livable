@@ -1,6 +1,15 @@
-# Python dependencies for AirRisk Dashboard
+# Python dependencies for AirRisk Dashboard  
 # Compatible with Python 3.11+ (including 3.12)
-pandas>=2.1.0
-numpy>=1.26.4
-plotly>=5.17.0
-streamlit>=1.28.0
+# Last updated: 2026-02-12
+
+# Core data processing - Python 3.12 compatible versions
+numpy==1.26.4
+pandas==2.2.0
+
+# Visualization and web framework
+plotly==5.17.0
+streamlit==1.31.1
+
+# Additional dependencies that may be auto-detected
+pillow>=10.0.0
+pyarrow>=15.0.0
