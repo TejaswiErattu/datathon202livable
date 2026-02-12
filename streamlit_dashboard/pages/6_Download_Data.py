@@ -1,6 +1,7 @@
 """
 Page 6: Download Data & Methodology
 Export data and view methodology
+Author: Tejaswi Erattutaj
 """
 
 import streamlit as st
@@ -14,7 +15,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from styles import apply_shared_styles, page_header, section_label, section_divider
 
-st.set_page_config(page_title="Download & Methodology", page_icon="📥", layout="wide")
+st.set_page_config(page_title="AirRisk - Download & Methodology", page_icon="�", layout="wide")
 
 # Apply shared CSS
 apply_shared_styles(st)
@@ -32,7 +33,6 @@ def load_data():
         os.path.join(data_dir, "annual_aqi_by_county_2022.csv"),
         os.path.join(data_dir, "annual_aqi_by_county_2023.csv"),
         os.path.join(data_dir, "annual_aqi_by_county_2024.csv"),
-        os.path.join(data_dir, "annual_aqi_by_county_2025.csv"),
     ]
     
     df_list = []
@@ -90,47 +90,13 @@ if df.empty:
     st.error("No data found.")
     st.stop()
 
-# =============================================================================
-# FILTERS
-# =============================================================================
-section_label(st, "Data Export Filters")
-
-col1, col2, col3 = st.columns(3)
-
-with col1:
-    year_range = st.slider(
-        "Year Range to Include", 
-        min_value=2021, max_value=2025, value=(2021, 2025), step=1,
-        help="Select which years of data to include in exports",
-        key="download_year_range"
-    )
-
-with col2:
-    percentile = st.slider(
-        "Threshold Percentile", 
-        min_value=80, max_value=99, value=90, step=1,
-        help="Percentile for defining Double Jeopardy status"
-    )
-
-with col3:
-    export_format = st.selectbox(
-        "Export Format",
-        ["CSV", "Excel", "JSON"],
-        help="Choose the format for data downloads"
-    )
-
-# Apply year filter
-year_min, year_max = year_range
-df_filtered = df[(df['Year'] >= year_min) & (df['Year'] <= year_max)].copy()
-
-county_stats = compute_county_stats(df_filtered)
-full_stats, median_thresh, max_thresh = compute_all_exports(df_filtered, county_stats, percentile)
+county_stats = compute_county_stats(df)
+full_stats, median_thresh, max_thresh = compute_all_exports(df, county_stats)
 
 # =============================================================================
 # PAGE CONTENT
 # =============================================================================
-years_text = f"{year_min}-{year_max}" if year_min != year_max else str(year_min)
-page_header(st, "Download Data & Methodology", f"Export Processed Data and Learn About Our Approach ({years_text})", "📥")
+page_header(st, "Download Data & Methodology", "Export Processed Data and Learn About Our Approach", "")
 
 section_divider(st)
 
@@ -216,16 +182,18 @@ st.download_button(
 # METHODOLOGY SECTION
 # =============================================================================
 st.markdown("---")
-st.markdown("## 📐 Methodology")
+st.markdown("## Methodology")
 
 st.markdown("""
 <div class="info-card">
 <h4 style="margin-top: 0; color: #2d3748;">Data Processing Pipeline</h4>
 <ul>
-    <li><strong>Data Source:</strong> EPA Air Quality Index Annual Summary files (2021-2024)</li>
+    <li><strong>Data Source:</strong> U.S. Environmental Protection Agency (EPA) Air Quality System</li>
+    <li><strong>Dataset:</strong> Air Quality Index Annual Summary files (2021-2024)</li>
     <li><strong>Geographic Unit:</strong> U.S. Counties</li>
     <li><strong>Aggregation:</strong> 4-year average of annual Median AQI and Max AQI per county</li>
     <li><strong>Threshold Calculation:</strong> 90th percentile computed dynamically from filtered dataset</li>
+    <li><strong>Citation:</strong> EPA Air Quality System. Retrieved from: https://www.epa.gov/outdoor-air-quality-data</li>
 </ul>
 </div>
 """, unsafe_allow_html=True)

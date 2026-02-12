@@ -1,4 +1,4 @@
-# 🌍 AQI Double Jeopardy Dashboard
+# 🌍 AirRisk Dashboard
 ### Identifying Communities Facing Chronic AND Acute Pollution Burden
 **Datathon 2026 - Environmental Justice Analysis Tool**
 

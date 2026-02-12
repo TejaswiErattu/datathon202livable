@@ -278,7 +278,7 @@ SHARED_CSS = """
     }
     
     section[data-testid="stSidebar"] .stMarkdown {
-        color: #d1d5db;
+        color: white !important;
     }
     
     section[data-testid="stSidebar"] h2 {
@@ -292,15 +292,33 @@ SHARED_CSS = """
     }
     
     section[data-testid="stSidebar"] a {
-        color: #d1d5db !important;
+        color: white !important;
+        text-decoration: none !important;
+    }
+    
+    section[data-testid="stSidebar"] a:hover {
+        color: #fbbf24 !important;
+        text-decoration: none !important;
+    }
+    
+    section[data-testid="stSidebar"] a:visited {
+        color: white !important;
     }
     
     section[data-testid="stSidebar"] p {
-        color: #d1d5db !important;
+        color: white !important;
     }
     
     section[data-testid="stSidebar"] label {
-        color: #d1d5db !important;
+        color: white !important;
+    }
+    
+    section[data-testid="stSidebar"] span {
+        color: white !important;
+    }
+    
+    section[data-testid="stSidebar"] div {
+        color: white !important;
     }
     
     /* ========== FORM ELEMENTS ========== */

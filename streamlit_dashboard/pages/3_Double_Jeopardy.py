@@ -1,6 +1,7 @@
 """
-Page 3: Double Jeopardy Analysis
+Page 3: Double Jeopardy Analysis - AirRisk Dashboard
 Interactive Vulnerability Profile scatter plot with bar chart
+Author: Tejaswi Erattutaj
 """
 
 import streamlit as st
@@ -16,7 +17,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from styles import apply_shared_styles, page_header, section_label, section_divider
 
-st.set_page_config(page_title="Double Jeopardy", page_icon="🎯", layout="wide")
+st.set_page_config(page_title="AirRisk - Double Jeopardy", page_icon="⚖️", layout="wide")
 
 # Apply shared CSS
 apply_shared_styles(st)
@@ -34,7 +35,6 @@ def load_data():
         os.path.join(data_dir, "annual_aqi_by_county_2022.csv"),
         os.path.join(data_dir, "annual_aqi_by_county_2023.csv"),
         os.path.join(data_dir, "annual_aqi_by_county_2024.csv"),
-        os.path.join(data_dir, "annual_aqi_by_county_2025.csv"),
     ]
     
     df_list = []
@@ -65,50 +65,9 @@ if df.empty:
 county_stats = compute_county_stats(df)
 
 # =============================================================================
-# FILTERS (moved up to calculate year range first)
-# =============================================================================
-section_label(st, "Controls")
-
-col1, col2, col3, col4 = st.columns(4)
-
-with col1:
-    year_range = st.slider(
-        "Year Range to Include", 
-        min_value=2021, max_value=2025, value=(2021, 2025), step=1,
-        help="Select which years of data to include in the analysis",
-        key="dj_year_range"
-    )
-
-with col2:
-    percentile = st.slider(
-        "Percentile Threshold", 
-        min_value=80, max_value=99, value=90, step=1,
-        help="Counties above this percentile for BOTH metrics qualify as Double Jeopardy"
-    )
-
-with col3:
-    states = ['All States'] + sorted(county_stats['State'].unique().tolist())
-    selected_state = st.selectbox("Filter by State", states, key="dj_state")
-
-with col4:
-    top_n = st.slider("Top N for Bar Chart", min_value=5, max_value=25, value=10, step=5)
-
-# Apply year filter and recalculate county stats
-year_min, year_max = year_range
-df_filtered = df[(df['Year'] >= year_min) & (df['Year'] <= year_max)].copy()
-
-# Recalculate county stats with filtered years
-county_stats_filtered = df_filtered.groupby(['State', 'County']).agg({
-    'Median AQI': 'mean',
-    'Max AQI': 'mean'
-}).reset_index()
-county_stats_filtered.columns = ['State', 'County', 'mean_median_aqi', 'mean_max_aqi']
-
-# =============================================================================
 # PAGE CONTENT
 # =============================================================================
-years_text = f"{year_min}-{year_max}" if year_min != year_max else str(year_min)
-page_header(st, "Vulnerability Profile Analysis", f"Counties by Vulnerability (Chronic) vs Hazard (Acute) Scores ({years_text})", "🎯")
+page_header(st, "Vulnerability Profile Analysis", "Counties by Vulnerability (Chronic) vs Hazard (Acute) Scores", "")
 
 st.markdown("""
 <div class="callout-box-red">
@@ -121,11 +80,32 @@ they need <em>priority intervention</em> as they face the worst of both worlds.
 
 section_divider(st)
 
-# Filter data by state
+# =============================================================================
+# FILTERS
+# =============================================================================
+section_label(st, "Controls")
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    percentile = st.slider(
+        "Percentile Threshold", 
+        min_value=80, max_value=99, value=90, step=1,
+        help="Counties above this percentile for BOTH metrics qualify as Double Jeopardy"
+    )
+
+with col2:
+    states = ['All States'] + sorted(county_stats['State'].unique().tolist())
+    selected_state = st.selectbox("Filter by State", states, key="dj_state")
+
+with col3:
+    top_n = st.slider("Top N for Bar Chart", min_value=5, max_value=25, value=10, step=5)
+
+# Filter data
 if selected_state != 'All States':
-    filtered_stats = county_stats_filtered[county_stats_filtered['State'] == selected_state].copy()
+    filtered_stats = county_stats[county_stats['State'] == selected_state].copy()
 else:
-    filtered_stats = county_stats_filtered.copy()
+    filtered_stats = county_stats.copy()
 
 # =============================================================================
 # COMPUTE NORMALIZED SCORES (Vulnerability & Hazard)
@@ -440,3 +420,22 @@ if len(dj_counties) > 0:
     st.dataframe(display_df, use_container_width=True)
 else:
     st.info("No Double Jeopardy counties found with the current filters. Try selecting 'All States' or adjusting the threshold.")
+
+# =============================================================================
+# WHY THIS MATTERS SECTION
+# =============================================================================
+st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+
+st.markdown("""
+<h2 style="color: #1e293b; font-weight: 600; font-size: 1.8rem; margin-top: 2rem; margin-bottom: 1.5rem;">Why Identifying These Counties Matter</h2>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+**1. Residents face a greater risk:** They face chronic exposure to air pollution, with little to no recovery time before they face acute spikes. It is important to identify the places worst affected so respiratory clinic funding and inhaler and air purifier distribution can be prioritised.
+
+**2. Chronic air pollution can be seen in the infrastructure.** Acute pollution results in events like wildfires. Knowing which counties are the most prone to these incidents would help in infrastructure planning, like green buffers and heat mitigation design.
+
+**3. Knowing which counties face year round pollution encourages year round readiness.**
+
+**4. Helps quantify hidden costs that occur due to higher medical bills and a reduced living standard as a result of the air pollution around.**
+""")
