@@ -1,3 +1,5 @@
+# Python dependencies for AirRisk Dashboard
+# Compatible with Python 3.11+ (including 3.12)
 pandas>=2.1.0
 numpy>=1.26.4
 plotly>=5.17.0
