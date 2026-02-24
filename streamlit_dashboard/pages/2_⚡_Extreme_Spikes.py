@@ -1,7 +1,6 @@
 """
 Page 2: Extreme Spikes Analysis
 Top counties by Mean Max AQI (acute peak events)
-Author: Tejaswi Erattutaj
 """
 
 import streamlit as st
@@ -17,7 +16,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from styles import apply_shared_styles, page_header, section_label, section_divider
 
-st.set_page_config(page_title="AirRisk - Extreme Spikes", page_icon="🔥", layout="wide")
+st.set_page_config(page_title="AirRisk - Extreme Spikes", page_icon="⚡", layout="wide")
 
 # Apply shared CSS
 apply_shared_styles(st)
@@ -48,10 +47,9 @@ def load_data():
     
     return pd.concat(df_list, ignore_index=True) if df_list else pd.DataFrame()
 
-@st.cache_data
-def compute_county_stats(_df):
+def compute_county_stats(df):
     """Compute aggregated county statistics - EXACT as in original notebook."""
-    county_stats = _df.groupby(['State', 'County']).agg({
+    county_stats = df.groupby(['State', 'County']).agg({
         'Median AQI': 'mean',
         'Max AQI': 'mean'
     }).reset_index()
@@ -68,7 +66,7 @@ county_stats = compute_county_stats(df)
 # =============================================================================
 # PAGE CONTENT
 # =============================================================================
-page_header(st, "Extreme Pollution Spikes", "Top Counties by Mean Max AQI (2021-2024)", "")
+page_header(st, "Extreme Pollution Spikes", "Top Counties by Mean Max AQI (2021-2024)", "⚡")
 
 st.markdown("""
 <div class="callout-box-orange">

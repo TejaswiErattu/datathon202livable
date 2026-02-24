@@ -1,7 +1,6 @@
 """
 Page 5: County Drilldown
 Individual county profiles with yearly trends
-Author: Tejaswi Erattutaj
 """
 
 import streamlit as st
@@ -49,9 +48,8 @@ def load_data():
     
     return pd.concat(df_list, ignore_index=True) if df_list else pd.DataFrame()
 
-@st.cache_data
-def compute_county_stats(_df):
-    county_stats = _df.groupby(['State', 'County']).agg({
+def compute_county_stats(df):
+    county_stats = df.groupby(['State', 'County']).agg({
         'Median AQI': 'mean',
         'Max AQI': 'mean'
     }).reset_index()
@@ -68,7 +66,7 @@ county_stats = compute_county_stats(df)
 # =============================================================================
 # PAGE CONTENT
 # =============================================================================
-page_header(st, "County Drilldown", "Explore Individual County Profiles", "")
+page_header(st, "County Drilldown", "Explore Individual County Profiles", "🔍")
 
 st.markdown("""
 <div class="callout-box-teal">

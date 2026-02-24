@@ -1,7 +1,6 @@
 """
 Page 3: Double Jeopardy Analysis - AirRisk Dashboard
 Interactive Vulnerability Profile scatter plot with bar chart
-Author: Tejaswi Erattutaj
 """
 
 import streamlit as st
@@ -17,7 +16,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from styles import apply_shared_styles, page_header, section_label, section_divider
 
-st.set_page_config(page_title="AirRisk - Double Jeopardy", page_icon="⚖️", layout="wide")
+st.set_page_config(page_title="AirRisk - Double Jeopardy", page_icon="🎯", layout="wide")
 
 # Apply shared CSS
 apply_shared_styles(st)
@@ -48,9 +47,8 @@ def load_data():
     
     return pd.concat(df_list, ignore_index=True) if df_list else pd.DataFrame()
 
-@st.cache_data
-def compute_county_stats(_df):
-    county_stats = _df.groupby(['State', 'County']).agg({
+def compute_county_stats(df):
+    county_stats = df.groupby(['State', 'County']).agg({
         'Median AQI': 'mean',
         'Max AQI': 'mean'
     }).reset_index()
@@ -67,7 +65,7 @@ county_stats = compute_county_stats(df)
 # =============================================================================
 # PAGE CONTENT
 # =============================================================================
-page_header(st, "Vulnerability Profile Analysis", "Counties by Vulnerability (Chronic) vs Hazard (Acute) Scores", "")
+page_header(st, "Vulnerability Profile Analysis", "Counties by Vulnerability (Chronic) vs Hazard (Acute) Scores", "🎯")
 
 st.markdown("""
 <div class="callout-box-red">

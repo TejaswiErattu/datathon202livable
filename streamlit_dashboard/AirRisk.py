@@ -1,0 +1,646 @@
+"""
+AirRisk Dashboard - Main App (Overview Page)
+Datathon 2026 - Professional Streamlit Dashboard
+"""
+
+import streamlit as st
+import pandas as pd
+import numpy as np
+import plotly.express as px
+import plotly.graph_objects as go
+import os
+import re
+
+# =============================================================================
+# PAGE CONFIG
+# =============================================================================
+st.set_page_config(
+    page_title="AirRisk Dashboard",
+    page_icon="🌍",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+# =============================================================================
+# CUSTOM CSS - Professional Climate Justice Theme (Polished)
+# =============================================================================
+st.markdown("""
+<style>
+    /* ========== GLOBAL STYLES ========== */
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+    
+    .stApp {
+        background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+    
+    /* Hide Streamlit branding */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    
+    /* ========== TYPOGRAPHY ========== */
+    h1 {
+        color: #0f172a;
+        font-weight: 700;
+        font-size: 2.25rem !important;
+        letter-spacing: -0.025em;
+        margin-bottom: 0.5rem !important;
+        line-height: 1.2;
+    }
+    
+    h2 {
+        color: #1e293b;
+        font-weight: 600;
+        font-size: 1.5rem !important;
+        letter-spacing: -0.01em;
+        margin-top: 2rem !important;
+        margin-bottom: 1rem !important;
+    }
+    
+    h3 {
+        color: #334155;
+        font-weight: 600;
+        font-size: 1.125rem !important;
+        margin-top: 1.5rem !important;
+        margin-bottom: 0.75rem !important;
+    }
+    
+    h4 {
+        color: #475569;
+        font-weight: 600;
+        font-size: 1rem !important;
+    }
+    
+    p, li {
+        color: #475569;
+        font-size: 0.95rem;
+        line-height: 1.6;
+    }
+    
+    /* ========== METRIC CARDS ========== */
+    div[data-testid="metric-container"] {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 20px 24px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
+        transition: box-shadow 0.2s ease, transform 0.2s ease;
+    }
+    
+    div[data-testid="metric-container"]:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08), 0 8px 24px rgba(0,0,0,0.04);
+        transform: translateY(-1px);
+    }
+    
+    div[data-testid="metric-container"] label {
+        color: #64748b;
+        font-size: 0.8rem;
+        font-weight: 500;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    
+    div[data-testid="metric-container"] div[data-testid="stMetricValue"] {
+        color: #0f172a;
+        font-weight: 700;
+        font-size: 1.75rem !important;
+    }
+    
+    div[data-testid="metric-container"] div[data-testid="stMetricDelta"] {
+        font-size: 0.8rem;
+    }
+    
+    /* ========== CARDS & CONTAINERS ========== */
+    .info-card {
+        background: white;
+        border-radius: 16px;
+        padding: 28px 32px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
+        margin-bottom: 20px;
+    }
+    
+    .info-card h4 {
+        margin-top: 0 !important;
+        margin-bottom: 16px !important;
+        padding-bottom: 12px;
+        border-bottom: 1px solid #f1f5f9;
+    }
+    
+    .callout-box {
+        background: linear-gradient(135deg, #eff6ff 0%, #f0fdf4 100%);
+        border-left: 4px solid #3b82f6;
+        border-radius: 0 16px 16px 0;
+        padding: 24px 28px;
+        margin: 20px 0;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+    }
+    
+    .callout-box strong {
+        color: #1e40af;
+    }
+    
+    .warning-box {
+        background: linear-gradient(135deg, #fff7ed 0%, #fef2f2 100%);
+        border-left: 4px solid #f97316;
+        border-radius: 0 16px 16px 0;
+        padding: 24px 28px;
+        margin: 20px 0;
+    }
+    
+    .warning-box strong {
+        color: #c2410c;
+    }
+    
+    /* ========== SIDEBAR ========== */
+    section[data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
+        border-right: 1px solid #334155;
+    }
+    
+    section[data-testid="stSidebar"] .stMarkdown {
+        color: #e2e8f0;
+    }
+    
+    section[data-testid="stSidebar"] h2 {
+        color: white !important;
+        font-size: 1.25rem !important;
+    }
+    
+    section[data-testid="stSidebar"] hr {
+        border-color: #334155;
+        margin: 1.5rem 0;
+    }
+    
+    /* Sidebar navigation text styling */
+    section[data-testid="stSidebar"] p {
+        color: white !important;
+    }
+    
+    section[data-testid="stSidebar"] .stMarkdown p {
+        color: white !important;
+    }
+    
+    section[data-testid="stSidebar"] div[data-testid="stMarkdownContainer"] p {
+        color: white !important;
+    }
+    
+    section[data-testid="stSidebar"] span {
+        color: white !important;
+    }
+    
+    section[data-testid="stSidebar"] .stSelectbox label {
+        color: white !important;
+    }
+    
+    section[data-testid="stSidebar"] .stMultiSelect label {
+        color: white !important;
+    }
+    
+    section[data-testid="stSidebar"] .stSlider label {
+        color: white !important;
+    }
+    
+    section[data-testid="stSidebar"] .stRadio label {
+        color: white !important;
+    }
+    
+    section[data-testid="stSidebar"] .stCheckbox label {
+        color: white !important;
+    }
+    
+    section[data-testid="stSidebar"] .stTextInput label {
+        color: white !important;
+    }
+    
+    section[data-testid="stSidebar"] .stNumberInput label {
+        color: white !important;
+    }
+    
+    section[data-testid="stSidebar"] .stDateInput label {
+        color: white !important;
+    }
+    
+    section[data-testid="stSidebar"] .stTimeInput label {
+        color: white !important;
+    }
+    
+    /* Sidebar navigation links and all text */
+    section[data-testid="stSidebar"] a {
+        color: white !important;
+        text-decoration: none !important;
+    }
+    
+    section[data-testid="stSidebar"] a:hover {
+        color: #fbbf24 !important;
+        text-decoration: none !important;
+    }
+    
+    section[data-testid="stSidebar"] a:visited {
+        color: white !important;
+    }
+    
+    section[data-testid="stSidebar"] a:active {
+        color: white !important;
+    }
+    
+    /* Force all sidebar text to be white */
+    section[data-testid="stSidebar"] * {
+        color: white !important;
+    }
+    
+    /* Exception for form inputs which should remain readable */
+    section[data-testid="stSidebar"] input,
+    section[data-testid="stSidebar"] select,
+    section[data-testid="stSidebar"] option {
+        color: black !important;
+    }
+    
+    /* Rename 'app' to 'AirRisk' in sidebar navigation */
+    section[data-testid="stSidebar"] a[href="/"] span {
+        font-size: 0 !important;
+        color: transparent !important;
+    }
+    
+    section[data-testid="stSidebar"] a[href="/"] span:after {
+        content: "AirRisk";
+        font-size: 0.9rem !important;
+        color: white !important;
+        font-weight: 500;
+        display: inline-block;
+        line-height: normal;
+    }
+    
+    section[data-testid="stSidebar"] li:first-child a span {
+        font-size: 0 !important;
+        color: transparent !important;
+    }
+    
+    section[data-testid="stSidebar"] li:first-child a span:after {
+        content: "AirRisk";
+        font-size: 0.9rem !important;
+        color: white !important;
+        font-weight: 500;
+        display: inline-block;
+        line-height: normal;
+    }
+    
+    /* ========== FORM ELEMENTS ========== */
+    .stSelectbox > div > div {
+        border-radius: 10px;
+        border-color: #e2e8f0;
+        background: white;
+    }
+    
+    .stSelectbox > div > div:focus-within {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+    
+    .stSlider > div > div {
+        color: #3b82f6;
+    }
+    
+    /* Slider track */
+    .stSlider [data-baseweb="slider"] {
+        margin-top: 8px;
+    }
+    
+    /* ========== EXPANDER ========== */
+    .streamlit-expanderHeader {
+        background: white;
+        border-radius: 12px;
+        border: 1px solid #e2e8f0;
+        font-weight: 500;
+    }
+    
+    .streamlit-expanderContent {
+        border: 1px solid #e2e8f0;
+        border-top: none;
+        border-radius: 0 0 12px 12px;
+        background: white;
+    }
+    
+    /* ========== DATAFRAME ========== */
+    .stDataFrame {
+        border-radius: 12px;
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+    }
+    
+    /* ========== FOOTER ========== */
+    .footer {
+        text-align: center;
+        padding: 32px 24px;
+        color: #64748b;
+        font-size: 0.85rem;
+        border-top: 1px solid #e2e8f0;
+        margin-top: 64px;
+        background: white;
+        border-radius: 16px 16px 0 0;
+    }
+    
+    .footer strong {
+        color: #475569;
+    }
+    
+    /* ========== SECTION DIVIDER ========== */
+    .section-divider {
+        height: 1px;
+        background: linear-gradient(90deg, transparent 0%, #e2e8f0 20%, #e2e8f0 80%, transparent 100%);
+        margin: 32px 0;
+    }
+    
+    /* ========== PLOTLY CHART CONTAINER ========== */
+    .stPlotlyChart {
+        background: white;
+        border-radius: 16px;
+        padding: 16px;
+        border: 1px solid #e2e8f0;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+</style>
+""", unsafe_allow_html=True)
+
+# =============================================================================
+# DATA LOADING - Cached for performance
+# =============================================================================
+@st.cache_data
+def load_data():
+    """Load and combine all AQI datasets - EXACT as in original notebook."""
+    # Get the parent directory where CSV files are located
+    current_dir = os.path.dirname(os.path.abspath(__file__))
+    data_dir = os.path.dirname(current_dir)
+    
+    file_paths = [
+        os.path.join(data_dir, "annual_aqi_by_county_2021.csv"),
+        os.path.join(data_dir, "annual_aqi_by_county_2022.csv"),
+        os.path.join(data_dir, "annual_aqi_by_county_2023.csv"),
+        os.path.join(data_dir, "annual_aqi_by_county_2024.csv"),
+    ]
+    
+    df_list = []
+    for file in file_paths:
+        if os.path.exists(file):
+            current_df = pd.read_csv(file)
+            match = re.search(r'(\d{4})\.csv', file)
+            if match:
+                year = int(match.group(1))
+                current_df['Year'] = year
+            df_list.append(current_df)
+    
+    if not df_list:
+        st.error("No data files found. Please ensure CSV files are in the parent directory.")
+        return pd.DataFrame()
+    
+    df = pd.concat(df_list, ignore_index=True)
+    return df
+
+def compute_county_stats(df):
+    """Compute aggregated county statistics - EXACT as in original notebook."""
+    county_stats = df.groupby(['State', 'County']).agg({
+        'Median AQI': 'mean',
+        'Max AQI': 'mean'
+    }).reset_index()
+    county_stats.columns = ['State', 'County', 'mean_median_aqi', 'mean_max_aqi']
+    return county_stats
+
+def compute_double_jeopardy(county_stats, percentile=90):
+    """Identify Double Jeopardy counties - EXACT logic from notebook."""
+    median_threshold = county_stats['mean_median_aqi'].quantile(percentile / 100)
+    max_threshold = county_stats['mean_max_aqi'].quantile(percentile / 100)
+    
+    stats = county_stats.copy()
+    stats['Risk_Category'] = 'Low Risk'
+    stats.loc[(stats['mean_median_aqi'] >= median_threshold), 'Risk_Category'] = 'High Chronic'
+    stats.loc[(stats['mean_max_aqi'] >= max_threshold), 'Risk_Category'] = 'High Acute'
+    stats.loc[(stats['mean_median_aqi'] >= median_threshold) & 
+              (stats['mean_max_aqi'] >= max_threshold), 'Risk_Category'] = 'Double Jeopardy'
+    
+    return stats, median_threshold, max_threshold
+
+# =============================================================================
+# LOAD DATA
+# =============================================================================
+df = load_data()
+
+if df.empty:
+    st.stop()
+
+county_stats = compute_county_stats(df)
+stats_with_risk, median_thresh, max_thresh = compute_double_jeopardy(county_stats)
+
+# =============================================================================
+# MAIN CONTENT - OVERVIEW PAGE
+# =============================================================================
+
+# Main title and project introduction
+st.markdown("""
+<div style="text-align: center; margin-bottom: 30px;">
+    <h1 style="font-size: 3.5rem; font-weight: 700; margin-bottom: 10px; color: #0f172a; letter-spacing: -0.02em;">Air Risk</h1>
+    <p style="color: #64748b; font-size: 1.2rem; margin-bottom: 20px; font-weight: 500;">Identifying Communities Facing Chronic AND Acute Pollution Burden</p>
+</div>
+""", unsafe_allow_html=True)
+
+# Project Introduction using regular markdown
+st.markdown("""
+Air pollution is not just about how bad it gets, it's also about how long it stays bad. Some counties face short term spikes of air pollution, while people in other counties live with steady, increasing pollution levels every day. But a small group of counties face both problems.
+
+Our analysis identifies **Double Jeopardy** counties: counties that rank in the top of the nation for both median and maximum AQI.
+
+These counties don't get recovery periods. People face long and sustained exposure to year round air pollution, and when it spikes, it spikes bad. This combination makes it extremely environmentally and medically vulnerable.
+
+By visualising Median AQI against Max AQI, we bring to the limelight counties living at the dangerous intersection of chronic burden and acute spikes: long term stress meets short term shock.
+""")
+
+# Section divider
+st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+
+# =============================================================================
+# INTERACTIVE CONTROLS
+# =============================================================================
+st.markdown('<p style="color: #64748b; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 16px;">Controls</p>', unsafe_allow_html=True)
+
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    year_range = st.slider(
+        "Year Range to Include", 
+        min_value=2021, max_value=2024, value=(2021, 2024), step=1,
+        help="Select which years of data to include in the analysis",
+        key="overview_year_range"
+    )
+
+with col2:
+    all_states = sorted(county_stats['State'].unique().tolist())
+    all_states.insert(0, 'All States')
+    selected_state = st.selectbox("Filter by State", all_states, index=0, key="overview_state")
+
+with col3:
+    top_n = st.slider("Top N for Bar Chart", min_value=5, max_value=25, value=10, step=1, key="overview_top_n")
+
+# Apply filters based on controls
+year_min, year_max = year_range
+df_filtered = df[(df['Year'] >= year_min) & (df['Year'] <= year_max)].copy()
+
+# Recalculate county stats with filtered years
+county_stats_filtered = df_filtered.groupby(['State', 'County']).agg({
+    'Median AQI': 'mean',
+    'Max AQI': 'mean'
+}).reset_index()
+county_stats_filtered.columns = ['State', 'County', 'mean_median_aqi', 'mean_max_aqi']
+
+# Filter by state if selected
+if selected_state != 'All States':
+    county_stats_display = county_stats_filtered[county_stats_filtered['State'] == selected_state].copy()
+else:
+    county_stats_display = county_stats_filtered.copy()
+
+# Compute Double Jeopardy with filtered data
+stats_with_risk, median_thresh, max_thresh = compute_double_jeopardy(county_stats_display)
+double_jeopardy_count = len(stats_with_risk[stats_with_risk['Risk_Category'] == 'Double Jeopardy'])
+
+# Section divider
+st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+
+# =============================================================================
+# KPI CARDS
+# =============================================================================
+st.markdown('<p style="color: #64748b; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 16px;">Key Metrics at a Glance</p>', unsafe_allow_html=True)
+
+col1, col2, col3, col4 = st.columns(4)
+
+total_counties = len(county_stats_display)
+top_state = stats_with_risk[stats_with_risk['Risk_Category'] == 'Double Jeopardy']['State'].value_counts()
+top_state_name = top_state.index[0] if len(top_state) > 0 else "N/A"
+top_state_count = top_state.iloc[0] if len(top_state) > 0 else 0
+
+with col1:
+    st.metric(
+        label="Total Counties Analyzed",
+        value=f"{total_counties:,}"
+    )
+
+with col2:
+    years_text = f"{year_min}-{year_max}" if year_min != year_max else str(year_min)
+    st.metric(
+        label="Year Range",
+        value=years_text,
+        help="Currently analyzing data from selected year range"
+    )
+
+with col3:
+    st.metric(
+        label="Double Jeopardy Counties",
+        value=f"{double_jeopardy_count}",
+        delta=f"{(double_jeopardy_count/total_counties*100):.1f}% of total"
+    )
+
+with col4:
+    if selected_state != 'All States':
+        state_display = selected_state
+        state_help = f"Filtered to show only {selected_state} counties"
+    else:
+        state_display = "All States"
+        state_help = "Showing data for all states"
+    
+    st.metric(
+        label="Geographic Filter",
+        value=state_display,
+        help=state_help
+    )
+
+# Section divider
+st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+
+# =============================================================================
+# DOUBLE JEOPARDY DEFINITION BOX
+# =============================================================================
+st.markdown('<h3 style="margin-top: 0;">🎯 How We Define Double Jeopardy</h3>', unsafe_allow_html=True)
+
+col1, col2 = st.columns([2, 1])
+
+with col1:
+    st.markdown("""
+    <div class="info-card">
+    <h4 style="color: #dc2626; margin-top: 0; border-bottom: 1px solid #fef2f2; padding-bottom: 12px;">Double Jeopardy = High Chronic + High Acute</h4>
+    
+    <p>A county qualifies as <strong>Double Jeopardy</strong> if it meets BOTH criteria:</p>
+    
+    <ul>
+        <li><strong>High Chronic Exposure:</strong> 4-year average Median AQI ≥ 90th percentile<br>
+        <span style="color: #64748b; font-size: 0.9rem;">→ Persistent daily pollution burden affecting long-term health</span></li>
+        <br>
+        <li><strong>High Acute Exposure:</strong> 4-year average Max AQI ≥ 90th percentile<br>
+        <span style="color: #64748b; font-size: 0.9rem;">→ Dangerous pollution spikes causing immediate health risks</span></li>
+    </ul>
+    
+    <p style="margin-bottom: 0;"><strong>Why it matters:</strong> These communities face a more severe health burden. Their residents do not have relief periods to recover from poor air quality and are prone to also face periodic dangerous spikes in pollution.</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col2:
+    # Risk category breakdown pie chart
+    risk_counts = stats_with_risk['Risk_Category'].value_counts()
+    
+    fig_pie = go.Figure(data=[go.Pie(
+        labels=risk_counts.index,
+        values=risk_counts.values,
+        hole=0.5,
+        marker_colors=['#48bb78', '#ecc94b', '#ed8936', '#c53030'],
+        textinfo='percent+label',
+        textposition='outside'
+    )])
+    
+    fig_pie.update_layout(
+        title=dict(text="Risk Category Distribution", font_size=14),
+        showlegend=False,
+        margin=dict(t=60, b=20, l=20, r=20),
+        height=300,
+        paper_bgcolor='rgba(0,0,0,0)',
+        plot_bgcolor='rgba(0,0,0,0)'
+    )
+    
+    st.plotly_chart(fig_pie, use_container_width=True)
+
+# Section divider
+st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+
+# =============================================================================
+# THRESHOLDS DISPLAY
+# =============================================================================
+st.markdown('<p style="color: #64748b; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 16px;">Current Thresholds</p>', unsafe_allow_html=True)
+
+col1, col2 = st.columns(2)
+
+with col1:
+    st.markdown(f"""
+    <div class="info-card" style="text-align: center;">
+        <h4 style="color: #2563eb; margin: 0; border: none; padding: 0;">Chronic Threshold</h4>
+        <p style="font-size: 2.25rem; font-weight: 700; color: #0f172a; margin: 12px 0 8px 0;">{median_thresh:.1f}</p>
+        <p style="color: #64748b; margin: 0; font-size: 0.85rem;">90th percentile Mean Median AQI</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+with col2:
+    st.markdown(f"""
+    <div class="info-card" style="text-align: center;">
+        <h4 style="color: #ea580c; margin: 0; border: none; padding: 0;">Acute Threshold</h4>
+        <p style="font-size: 2.25rem; font-weight: 700; color: #0f172a; margin: 12px 0 8px 0;">{max_thresh:.1f}</p>
+        <p style="color: #64748b; margin: 0; font-size: 0.85rem;">90th percentile Mean Max AQI</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+# Section divider
+st.markdown('<div class="section-divider"></div>', unsafe_allow_html=True)
+
+# =============================================================================
+# FOOTER
+# =============================================================================
+st.markdown("""
+<div class="footer">
+    <p style="margin: 0 0 8px 0;"><strong>Data Source:</strong> EPA Air Quality Index Annual Summary (2021-2024)</p>
+    <p style="margin: 0; color: #94a3b8;"><strong>Built for:</strong> Datathon 2026 &nbsp;|&nbsp; <strong>Framework:</strong> Streamlit + Plotly</p>
+</div>
+""", unsafe_allow_html=True)

@@ -1,7 +1,6 @@
 """
 Page 4: Severity Score Analysis
 Normalized combined metric from notebook
-Author: Tejaswi Erattutaj
 """
 
 import streamlit as st
@@ -48,9 +47,8 @@ def load_data():
     
     return pd.concat(df_list, ignore_index=True) if df_list else pd.DataFrame()
 
-@st.cache_data
-def compute_county_stats(_df):
-    county_stats = _df.groupby(['State', 'County']).agg({
+def compute_county_stats(df):
+    county_stats = df.groupby(['State', 'County']).agg({
         'Median AQI': 'mean',
         'Max AQI': 'mean'
     }).reset_index()
@@ -67,7 +65,7 @@ county_stats = compute_county_stats(df)
 # =============================================================================
 # PAGE CONTENT
 # =============================================================================
-page_header(st, "Severity Score Analysis", "Combined Pollution Burden Metric", "")
+page_header(st, "Severity Score Analysis", "Combined Pollution Burden Metric", "📈")
 
 st.markdown("""
 <div class="callout-box-purple">

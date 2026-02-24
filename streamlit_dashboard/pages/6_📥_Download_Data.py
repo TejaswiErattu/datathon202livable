@@ -1,7 +1,6 @@
 """
 Page 6: Download Data & Methodology
 Export data and view methodology
-Author: Tejaswi Erattutaj
 """
 
 import streamlit as st
@@ -15,7 +14,7 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from styles import apply_shared_styles, page_header, section_label, section_divider
 
-st.set_page_config(page_title="AirRisk - Download & Methodology", page_icon="�", layout="wide")
+st.set_page_config(page_title="AirRisk - Download & Methodology", page_icon="📥", layout="wide")
 
 # Apply shared CSS
 apply_shared_styles(st)
@@ -46,25 +45,23 @@ def load_data():
     
     return pd.concat(df_list, ignore_index=True) if df_list else pd.DataFrame()
 
-@st.cache_data
-def compute_county_stats(_df):
-    county_stats = _df.groupby(['State', 'County']).agg({
+def compute_county_stats(df):
+    county_stats = df.groupby(['State', 'County']).agg({
         'Median AQI': 'mean',
         'Max AQI': 'mean'
     }).reset_index()
     county_stats.columns = ['State', 'County', 'mean_median_aqi', 'mean_max_aqi']
     return county_stats
 
-@st.cache_data
-def compute_all_exports(_df, _county_stats, percentile=90):
+def compute_all_exports(df, county_stats, percentile=90):
     """Compute all exportable datasets."""
     
     # Thresholds
-    median_threshold = _county_stats['mean_median_aqi'].quantile(percentile / 100)
-    max_threshold = _county_stats['mean_max_aqi'].quantile(percentile / 100)
+    median_threshold = county_stats['mean_median_aqi'].quantile(percentile / 100)
+    max_threshold = county_stats['mean_max_aqi'].quantile(percentile / 100)
     
     # Risk categories
-    stats = _county_stats.copy()
+    stats = county_stats.copy()
     stats['Risk_Category'] = 'Low Risk'
     stats.loc[(stats['mean_median_aqi'] >= median_threshold), 'Risk_Category'] = 'High Chronic'
     stats.loc[(stats['mean_max_aqi'] >= max_threshold), 'Risk_Category'] = 'High Acute'
@@ -96,7 +93,7 @@ full_stats, median_thresh, max_thresh = compute_all_exports(df, county_stats)
 # =============================================================================
 # PAGE CONTENT
 # =============================================================================
-page_header(st, "Download Data & Methodology", "Export Processed Data and Learn About Our Approach", "")
+page_header(st, "Download Data & Methodology", "Export Processed Data and Learn About Our Approach", "📥")
 
 section_divider(st)
 
@@ -182,18 +179,16 @@ st.download_button(
 # METHODOLOGY SECTION
 # =============================================================================
 st.markdown("---")
-st.markdown("## Methodology")
+st.markdown("## 📐 Methodology")
 
 st.markdown("""
 <div class="info-card">
 <h4 style="margin-top: 0; color: #2d3748;">Data Processing Pipeline</h4>
 <ul>
-    <li><strong>Data Source:</strong> U.S. Environmental Protection Agency (EPA) Air Quality System</li>
-    <li><strong>Dataset:</strong> Air Quality Index Annual Summary files (2021-2024)</li>
+    <li><strong>Data Source:</strong> EPA Air Quality Index Annual Summary files (2021-2024)</li>
     <li><strong>Geographic Unit:</strong> U.S. Counties</li>
     <li><strong>Aggregation:</strong> 4-year average of annual Median AQI and Max AQI per county</li>
     <li><strong>Threshold Calculation:</strong> 90th percentile computed dynamically from filtered dataset</li>
-    <li><strong>Citation:</strong> EPA Air Quality System. Retrieved from: https://www.epa.gov/outdoor-air-quality-data</li>
 </ul>
 </div>
 """, unsafe_allow_html=True)
